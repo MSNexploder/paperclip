@@ -270,13 +270,18 @@ module Paperclip
       range   = (min..max)
       message = options[:message] || "file size must be between :min and :max bytes."
       message = message.gsub(/:min/, min.to_s).gsub(/:max/, max.to_s)
-
-      validates_inclusion_of :"#{name}_file_size",
-                             :in        => range,
-                             :message   => message,
-                             :if        => options[:if],
-                             :unless    => options[:unless],
-                             :allow_nil => true
+      validate do |record|
+        validates_inclusion_of :"#{name}_file_size",
+                               :in        => range,
+                               :message   => message,
+                               :if        => options[:if],
+                               :unless    => options[:unless],
+                               :allow_nil => true
+        errors = record.errors.delete(:"#{name}_file_size")
+        errors.each do |error|
+          record.errors.add(name, error)
+        end if errors
+      end
     end
 
     # Adds errors if thumbnail creation fails. The same as specifying :whiny_thumbnails => true.
@@ -293,11 +298,17 @@ module Paperclip
     #   be run is this lambda or method returns true.
     # * +unless+: Same as +if+ but validates if lambda or method returns false.
     def validates_attachment_presence name, options = {}
-      message = options[:message] || "must be set."
-      validates_presence_of :"#{name}_file_name",
-                            :message   => message,
-                            :if        => options[:if],
-                            :unless    => options[:unless]
+      validate do |record|
+        message = options[:message] || "must be set."
+        validates_presence_of :"#{name}_file_name",
+                              :message   => message,
+                              :if        => options[:if],
+                              :unless    => options[:unless]
+        errors = record.errors.delete(:"#{name}_file_name")
+        errors.each do |error|
+          record.errors.add(name, error)
+        end if errors
+      end
     end
 
     # Places ActiveRecord-style validations on the content type of the file
@@ -323,9 +334,9 @@ module Paperclip
         if !allowed_types.any?{|t| t === value } && !(value.nil? || value.blank?)
           if record.errors.method(:add).arity == -2
             message = options[:message] || "is not one of #{allowed_types.join(", ")}"
-            record.errors.add(:"#{name}_content_type", message)
+            record.errors.add(name, message)
           else
-            record.errors.add(:"#{name}_content_type", :inclusion, :default => options[:message], :value => value)
+            record.errors.add(name, :inclusion, :default => options[:message], :value => value)
           end
         end
       end
