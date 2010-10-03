@@ -35,15 +35,11 @@ module Paperclip
 
       def flush_writes #:nodoc:
         @queued_for_write.each do |style_name, file|
-          begin
-            file.flush
-            FileUtils.mkdir_p(File.dirname(path(style_name)))
-            log("saving #{path(style_name)}")
-            FileUtils.mv(file.path, path(style_name))
-            FileUtils.chmod(0644, path(style_name))
-          ensure
-            file.close
-          end
+          file.close
+          FileUtils.mkdir_p(File.dirname(path(style_name)))
+          log("saving #{path(style_name)}")
+          FileUtils.mv(file.path, path(style_name))
+          FileUtils.chmod(0644, path(style_name))
         end
         @queued_for_write = {}
       end
