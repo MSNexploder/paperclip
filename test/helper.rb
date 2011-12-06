@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'tempfile'
+require 'pathname'
 require 'test/unit'
 
 require 'shoulda'
@@ -9,6 +10,9 @@ require 'active_record'
 require 'active_record/version'
 require 'active_support'
 require 'mime/types'
+require 'pathname'
+
+require 'pathname'
 
 puts "Testing against version #{ActiveRecord::VERSION::STRING}"
 
@@ -50,6 +54,10 @@ ActiveRecord::Base.logger = ActiveSupport::BufferedLogger.new(File.dirname(__FIL
 ActiveRecord::Base.establish_connection(config['test'])
 Paperclip.options[:logger] = ActiveRecord::Base.logger
 
+Dir[File.join(File.dirname(__FILE__), 'support','*')].each do |f|
+  require f
+end
+
 def reset_class class_name
   ActiveRecord::Base.send(:include, Paperclip::Glue)
   Object.send(:remove_const, class_name) rescue nil
@@ -84,6 +92,7 @@ def rebuild_class options = {}
   ActiveRecord::Base.send(:include, Paperclip::Glue)
   Object.send(:remove_const, "Dummy") rescue nil
   Object.const_set("Dummy", Class.new(ActiveRecord::Base))
+  Paperclip.reset_duplicate_clash_check!
   Dummy.class_eval do
     include Paperclip::Glue
     has_attached_file :avatar, options
@@ -147,4 +156,8 @@ def with_exitstatus_returning(code)
   ensure
     `ruby -e 'exit #{saved_exitstatus.to_i}'`
   end
+end
+
+def fixture_file(filename)
+ File.join(File.dirname(__FILE__), 'fixtures', filename)
 end

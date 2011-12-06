@@ -25,8 +25,11 @@ module Paperclip
 
     # Perform the actual interpolation. Takes the pattern to interpolate
     # and the arguments to pass, which are the attachment and style name.
+    # You can pass a method name on your record as a symbol, which should turn
+    # an interpolation pattern for Paperclip to use.
     def self.interpolate pattern, *args
-      all.reverse.inject( pattern.dup ) do |result, tag|
+      pattern = args.first.instance.send(pattern) if pattern.kind_of? Symbol
+      all.reverse.inject(pattern) do |result, tag|
         result.gsub(/:#{tag}/) do |match|
           send( tag, *args )
         end
@@ -44,7 +47,7 @@ module Paperclip
     RIGHT_HERE = "#{__FILE__.gsub(%r{^\./}, "")}:#{__LINE__ + 3}"
     def url attachment, style_name
       raise InfiniteInterpolationError if caller.any?{|b| b.index(RIGHT_HERE) }
-      attachment.url(style_name, false)
+      attachment.url(style_name, :timestamp => false, :escape => false)
     end
 
     # Returns the timestamp as defined by the <attachment>_updated_at field
@@ -83,7 +86,7 @@ module Paperclip
 
     # Returns the basename of the file. e.g. "file" for "file.jpg"
     def basename attachment, style_name
-      attachment.original_filename.gsub(/#{File.extname(attachment.original_filename)}$/, "")
+      attachment.original_filename.gsub(/#{Regexp.escape(File.extname(attachment.original_filename))}$/, "")
     end
 
     # Returns the extension of the file. e.g. "jpg" for "file.jpg"
@@ -136,8 +139,12 @@ module Paperclip
 
     # Returns a the attachment hash.  See Paperclip::Attachment#hash for
     # more details.
-    def hash attachment, style_name
-      attachment.hash(style_name)
+    def hash attachment=nil, style_name=nil
+      if attachment && style_name
+        attachment.hash(style_name)
+      else
+        super()
+      end
     end
 
     # Returns the id of the instance in a split path form. e.g. returns

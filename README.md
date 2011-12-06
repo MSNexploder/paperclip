@@ -60,6 +60,12 @@ Or, if you don't use Bundler (though you probably should, even in Rails 2), with
       config.gem "paperclip", :version => "~> 2.4"
       ...
     end
+For Non-Rails usage:
+
+    class ModuleName < ActiveRecord::Base
+        include Paperclip::Glue
+        ...
+    end
 
 Quick Start
 -----------
@@ -90,7 +96,7 @@ In your migrations:
 
 In your edit and new views:
 
-    <% form_for :user, @user, :url => user_path, :html => { :multipart => true } do |form| %>
+    <%= form_for :user, @user, :url => user_path, :html => { :multipart => true } do |form| %>
       <%= form.file_field :avatar %>
     <% end %>
 
@@ -115,25 +121,25 @@ Usage
 -----
 
 The basics of paperclip are quite simple: Declare that your model has an
-attachment with the has_attached_file method, and give it a name. Paperclip
+attachment with the has\_attached\_file method, and give it a name. Paperclip
 will wrap up up to four attributes (all prefixed with that attachment's name,
 so you can have multiple attachments per model if you wish) and give them a
 friendly front end. The attributes are `<attachment>_file_name`,
 `<attachment>_file_size`, `<attachment>_content_type`, and `<attachment>_updated_at`.
 Only `<attachment>_file_name` is required for paperclip to operate. More
-information about the options to has_attached_file is available in the
+information about the options to has\_attached\_file is available in the
 documentation of Paperclip::ClassMethods.
 
 Attachments can be validated with Paperclip's validation methods,
-validates_attachment_presence, validates_attachment_content_type, and
-validates_attachment_size.
+validates\_attachment\_presence, validates\_attachment\_content\_type, and
+validates\_attachment\_size.
 
 Storage
 -------
 
 The files that are assigned as attachments are, by default, placed in the
-directory specified by the :path option to has_attached_file. By default, this
-location is ":rails_root/public/system/:attachment/:id/:style/:filename". This
+directory specified by the :path option to has\_attached\_file. By default, this
+location is ":rails\_root/public/system/:attachment/:id/:style/:filename". This
 location was chosen because on standard Capistrano deployments, the
 public/system directory is symlinked to the app's shared directory, meaning it
 will survive between deployments. For example, using that :path, you may have a
@@ -163,11 +169,11 @@ a set of styles for an attachment, by default it is expected that those
 "styles" are actually "thumbnails". However, you can do much more than just
 thumbnail images. By defining a subclass of Paperclip::Processor, you can
 perform any processing you want on the files that are attached. Any file in
-your Rails app's lib/paperclip_processors directory is automatically loaded by
+your Rails app's lib/paperclip\_processors directory is automatically loaded by
 paperclip, allowing you to easily define custom processors. You can specify a
-processor with the :processors option to has_attached_file:
+processor with the :processors option to has\_attached\_file:
 
-    has_attached_file :scan, :styles => { :text => { :quality => :better } },
+    has_attached\_file :scan, :styles => { :text => { :quality => :better } },
                              :processors => [:ocr]
 
 This would load the hypothetical class Paperclip::Ocr, which would have the
@@ -182,7 +188,8 @@ geometry and a format, which the file will be converted to, like so:
 
 This will convert the "thumb" style to a 32x32 square in png format, regardless
 of what was uploaded. If the format is not specified, it is kept the same (i.e.
-jpgs will remain jpgs).
+jpgs will remain jpgs). For more information on the accepted style formats, see
+[http://www.imagemagick.org/script/command-line-processing.php#geometry](here).
 
 Multiple processors can be specified, and they will be invoked in the order
 they are defined in the :processors array. Each successive processor will
@@ -203,7 +210,7 @@ styles, no processors will be run if there are no styles defined._
 If you're interested in caching your thumbnail's width, height and size in the
 database, take a look at the [paperclip-meta](https://github.com/y8/paperclip-meta) gem.
 
-Also, if you're interesting to generate the thumbnail on-the-fly, you might want
+Also, if you're interested in generating the thumbnail on-the-fly, you might want
 to look into the [attachment_on_the_fly](https://github.com/drpentode/Attachment-on-the-Fly) gem.
 
 Events
@@ -216,8 +223,8 @@ are called before and after the processing of each attachment), and the
 attachment-specific `before_<attachment>_post_process` and
 `after_<attachment>_post_process`. The callbacks are intended to be as close to
 normal ActiveRecord callbacks as possible, so if you return false (specifically
-- returning nil is not the same) in a before_ filter, the post processing step
-will halt. Returning false in an after_ filter will not halt anything, but you
+\- returning nil is not the same) in a before\_ filter, the post processing step
+will halt. Returning false in an after\_ filter will not halt anything, but you
 can access the model and the attachment if necessary.
 
 _NOTE: Post processing will not even *start* if the attachment is not valid
@@ -227,9 +234,23 @@ called with valid attachments._
 URI Obfuscation
 ---------------
 
-Paperclip has an interpolation called `:hash` for obfuscating filenames of publicly-available files. For more on this feature read author's own explanation.
+Paperclip has an interpolation called `:hash` for obfuscating filenames of
+publicly-available files.
 
-[https://github.com/thoughtbot/paperclip/pull/416](https://github.com/thoughtbot/paperclip/pull/416)
+Example Usage:
+
+    has_attached_file :avatar, {
+        :url => "/system/:hash.:extension",
+        :hash_secret => "longSecretString"
+    }
+
+
+The `:hash` interpolation will be replaced with a unique hash made up of whatever
+is specified in `:hash_data`. The default value for `:hash_data` is `":class/:attachment/:id/:style/:updated_at"`.
+
+`:hash_secret` is required, an exception will be raised if `:hash` is used without `:hash_secret` present.
+
+For more on this feature read the author's own explanation. [https://github.com/thoughtbot/paperclip/pull/416](https://github.com/thoughtbot/paperclip/pull/416)
 
 MD5 Checksum / Fingerprint
 -------
@@ -269,7 +290,7 @@ a few utility examples would be compression and encryption processors.
 Dynamic Configuration
 ---------------------
 
-Callable objects (labdas, Procs) can be used in a number of places for dynamic
+Callable objects (lambdas, Procs) can be used in a number of places for dynamic
 configuration throughout Paperclip.  This strategy exists in a number of
 components of the library but is most significant in the possibilities for
 allowing custom styles and processors to be applied for specific model
@@ -322,19 +343,19 @@ Here is an example for Capistrano:
         run "cd #{release_path}; RAILS_ENV=production bundle exec rake paperclip:refresh:missing_styles"
       end
     end
-    
+
     after("deploy:update_code", "deploy:build_missing_paperclip_styles")
 
 Now you don't have to remember to refresh thumbnails in production everytime you add new style.
 Unfortunately it does not work with dynamic styles - it just ignores them.
 
 If you already have working app and don't want `rake paperclip:refresh:missing_styles` to refresh old pictures, you need to tell
-Paperclip about existing styles. Simply create paperclip_attachments.yml file by hand. For example:
+Paperclip about existing styles. Simply create paperclip\_attachments.yml file by hand. For example:
 
     class User < ActiveRecord::Base
       has_attached_file :avatar, :styles => {:thumb => 'x100', :croppable => '600x600>', :big => '1000x1000>'}
     end
-  
+
     class Book < ActiveRecord::Base
       has_attached_file :cover, :styles => {:small => 'x100', :large => '1000x1000>'}
       has_attached_file :sample, :styles => {:thumb => 'x100'}
@@ -342,17 +363,17 @@ Paperclip about existing styles. Simply create paperclip_attachments.yml file by
 
 Then in `RAILS_ROOT/public/system/paperclip_attachments.yml`:
 
-    --- 
-    :User: 
-      :avatar: 
+    ---
+    :User:
+      :avatar:
       - :thumb
       - :croppable
       - :big
-    :Book: 
-      :cover: 
+    :Book:
+      :cover:
       - :small
       - :large
-      :sample: 
+      :sample:
       - :thumb
 
 Testing
