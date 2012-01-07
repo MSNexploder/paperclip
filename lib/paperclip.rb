@@ -193,7 +193,7 @@ module Paperclip
     def check_for_url_clash(name,url,klass)
       @names_url ||= {}
       default_url = url || Attachment.default_options[:url]
-      if @names_url[name] && @names_url[name][:url] == default_url && @names_url[name][:class] != klass
+      if @names_url[name] && @names_url[name][:url] == default_url && @names_url[name][:class] != klass && @names_url[name][:url] !~ /:class/
         log("Duplicate URL for #{name} with #{default_url}. This will clash with attachment defined in #{@names_url[name][:class]} class")
       end
       @names_url[name] = {:url => default_url, :class => klass}
@@ -266,6 +266,9 @@ module Paperclip
     #     has_attached_file :avatar, :styles => { :normal => "100x100#" },
     #                       :default_style => :normal
     #     user.avatar.url # => "/avatars/23/normal_me.png"
+    # * +keep_old_files+: Keep the existing attachment files (original + resized) from
+    #   being automatically deleted when an attachment is cleared or updated.
+    #   Defaults to +false+.#
     # * +whiny+: Will raise an error if Paperclip cannot post_process an uploaded file due
     #   to a command line error. This will override the global setting for this attachment.
     #   Defaults to true. This option used to be called :whiny_thumbanils, but this is
