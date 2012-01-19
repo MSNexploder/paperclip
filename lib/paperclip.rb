@@ -377,7 +377,7 @@ module Paperclip
                                :if        => options[:if],
                                :unless    => options[:unless],
                                :allow_nil => true
-        errors = record.errors.delete(:"#{name}_file_size")
+        errors = record.errors.messages.delete(:"#{name}_file_size")
         errors.each do |error|
           record.errors.add(name, error)
         end if errors
