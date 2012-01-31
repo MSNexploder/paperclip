@@ -222,12 +222,38 @@ class S3Test < Test::Unit::TestCase
       @dummy.avatar = File.new(fixture_file('spaced file.png'), 'rb')
     end
 
-    should "return an unescaped version for path" do
-      assert_match /.+\/spaced file\.png/, @dummy.avatar.path
+    should "return a replaced version for path" do
+      assert_match /.+\/spaced_file\.png/, @dummy.avatar.path
     end
 
-    should "return an escaped version for url" do
-      assert_match /.+\/spaced%20file\.png/, @dummy.avatar.url
+    should "return a replaced version for url" do
+      assert_match /.+\/spaced_file\.png/, @dummy.avatar.url
+    end
+  end
+
+  context "An attachment that uses S3 for storage and has a question mark in file name" do
+    setup do
+      rebuild_model :styles  => { :large => ['500x500#', :jpg] },
+                    :storage => :s3,
+                    :bucket  => "bucket",
+                    :s3_credentials => {
+                      'access_key_id' => "12345",
+                      'secret_access_key' => "54321"
+                    }
+
+      file = StringIO.new(".")
+      file.original_filename = "question?mark.png"
+      @dummy = Dummy.new
+      @dummy.avatar = file
+      @dummy.save
+    end
+
+    should "return a replaced version for path" do
+      assert_match /.+\/question_mark\.png/, @dummy.avatar.path
+    end
+
+    should "return a replaced version for url" do
+      assert_match /.+\/question_mark\.png/, @dummy.avatar.url
     end
   end
 

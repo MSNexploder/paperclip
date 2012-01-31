@@ -11,29 +11,30 @@ module Paperclip
 
     def self.default_options
       @default_options ||= {
-        :url                   => "/system/:attachment/:id/:style/:filename",
-        :path                  => ":rails_root/public:url",
-        :styles                => {},
-        :only_process          => [],
-        :processors            => [:thumbnail],
         :convert_options       => {},
-        :source_file_options   => {},
-        :default_url           => "/:attachment/:style/missing.png",
         :default_style         => :original,
-        :storage               => :filesystem,
-        :use_timestamp         => true,
-        :whiny                 => Paperclip.options[:whiny] || Paperclip.options[:whiny_thumbnails],
-        :use_default_time_zone => true,
-        :hash_digest           => "SHA1",
+        :default_url           => "/:attachment/:style/missing.png",
+        :restricted_characters => /[&$+,\/:;=?@<>\[\]\{\}\|\\\^~%# ]/,
         :hash_data             => ":class/:attachment/:id/:style/:updated_at",
-        :preserve_files        => false,
+        :hash_digest           => "SHA1",
         :interpolator          => Paperclip::Interpolations,
-        :url_generator         => Paperclip::UrlGenerator
+        :only_process          => [],
+        :path                  => ":rails_root/public:url",
+        :preserve_files        => false,
+        :processors            => [:thumbnail],
+        :source_file_options   => {},
+        :storage               => :filesystem,
+        :styles                => {},
+        :url                   => "/system/:attachment/:id/:style/:filename",
+        :url_generator         => Paperclip::UrlGenerator,
+        :use_default_time_zone => true,
+        :use_timestamp         => true,
+        :whiny                 => Paperclip.options[:whiny] || Paperclip.options[:whiny_thumbnails]
       }
     end
 
-    attr_reader :name, :instance, :default_style, :convert_options, :queued_for_write, :whiny, :options, :interpolator
-    attr_reader :source_file_options, :whiny
+    attr_reader :name, :instance, :default_style, :convert_options, :queued_for_write, :whiny,
+                :options, :interpolator, :source_file_options, :whiny
     attr_accessor :post_processing
 
     # Creates an Attachment object. +name+ is the name of the attachment,
@@ -108,7 +109,7 @@ module Paperclip
       uploaded_filename ||= uploaded_file.original_filename
       stores_fingerprint             = @instance.respond_to?("#{name}_fingerprint".to_sym)
       @queued_for_write[:original]   = to_tempfile(uploaded_file)
-      instance_write(:file_name,       uploaded_filename.strip)
+      instance_write(:file_name,       cleanup_filename(uploaded_filename.strip))
       instance_write(:content_type,    uploaded_file.content_type.to_s.strip)
       instance_write(:file_size,       uploaded_file.size.to_i)
       instance_write(:fingerprint,     generate_fingerprint(uploaded_file)) if stores_fingerprint
@@ -478,5 +479,10 @@ module Paperclip
       end
     end
 
+    def cleanup_filename(filename)
+      if @options[:restricted_characters]
+        filename.gsub(@options[:restricted_characters], '_')
+      end
+    end
   end
 end
