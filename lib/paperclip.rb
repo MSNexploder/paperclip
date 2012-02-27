@@ -37,6 +37,7 @@ require 'paperclip/thumbnail'
 require 'paperclip/interpolations'
 require 'paperclip/style'
 require 'paperclip/attachment'
+require 'paperclip/attachment_options'
 require 'paperclip/storage'
 require 'paperclip/callback_compatibility'
 require 'paperclip/missing_attachment_styles'
@@ -322,10 +323,14 @@ module Paperclip
           write_inheritable_attribute(:attachment_definitions, {})
         end
       else
-        self.attachment_definitions = self.attachment_definitions.dup
+        if respond_to?(:class_attribute)
+          self.attachment_definitions = self.attachment_definitions.dup
+        else
+          write_inheritable_attribute(:attachment_definitions, self.attachment_definitions.dup)
+        end
       end
 
-      attachment_definitions[name] = {:validations => []}.merge(options)
+      attachment_definitions[name] = Paperclip::AttachmentOptions.new(options)
       Paperclip.classes_with_attachments << self.name
       Paperclip.check_for_url_clash(name,attachment_definitions[name][:url],self.name)
 
@@ -367,7 +372,7 @@ module Paperclip
       min     = options[:greater_than] || (options[:in] && options[:in].first) || 0
       max     = options[:less_than]    || (options[:in] && options[:in].last)  || (1.0/0)
       range   = (min..max)
-      message = options[:message] || "file size must be between :min and :max bytes"
+      message = options[:message] || "must be between :min and :max bytes"
       message = message.call if message.respond_to?(:call)
       message = message.gsub(/:min/, min.to_s).gsub(/:max/, max.to_s)
       validate do |record|

@@ -335,7 +335,13 @@ class S3Test < Test::Unit::TestCase
     should "return a relative URL for Rails to calculate assets host" do
       assert_match %r{^avatars/stringio\.txt}, @dummy.avatar.url
     end
-  end
+
+    should "always be rewound when returning from #to_file" do
+        assert_equal 0, @dummy.avatar.to_file.pos
+        @dummy.avatar.to_file.seek(10)
+        assert_equal 0, @dummy.avatar.to_file.pos
+      end
+    end
 
   context "Generating a secure url with an expiration" do
     setup do
@@ -534,6 +540,16 @@ class S3Test < Test::Unit::TestCase
 
         should "succeed" do
           assert true
+        end
+      end
+
+      context 'that the file were missing' do
+        setup do
+          AWS::S3::S3Object.any_instance.stubs(:exists?).raises(AWS::Errors::Base)
+        end
+
+        should 'return false on exists?' do
+          assert !@dummy.avatar.exists?
         end
       end
     end
